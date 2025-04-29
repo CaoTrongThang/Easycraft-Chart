@@ -3,7 +3,7 @@ import * as url from "url";
 import dotenv from "dotenv";
 
 dotenv.config();
-const PORT = process.env.PORT || 25565;
+const PORT = process.env.PORT || 3000;
 const COOLDOWN_MS = 30000; // 30 seconds cooldown
 
 interface PlayerData {
