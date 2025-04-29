@@ -11,7 +11,7 @@ interface PlayerData {
   currentDay: number;
   modpackName: string;
   version: string;
-  lastPing: number;
+  lastActive: number; // Changed from timeout to track timestamp
 }
 
 const activePlayers = new Map<string, PlayerData>();
@@ -20,11 +20,9 @@ const activePlayers = new Map<string, PlayerData>();
 setInterval(() => {
   const now = Date.now();
   for (const [playerName, data] of activePlayers.entries()) {
-    if (now - data.lastPing > COOLDOWN_MS) {
+    if (now - data.lastActive > COOLDOWN_MS) {
       activePlayers.delete(playerName);
-      console.log(
-        `Removed ${playerName} from active players | ${activePlayers.size} left`
-      );
+      console.log(`Removed ${playerName} due to inactivity`);
     }
   }
 }, 5000);
@@ -44,7 +42,7 @@ const server = http.createServer((req, res) => {
     req.on("end", () => {
       try {
         const data = JSON.parse(body);
-        if (!data.playerName || !data.modpackName) {
+        if (!data.playerName || !data.modpackName || !data.version) {
           res.writeHead(400);
           return res.end(JSON.stringify({ error: "Missing required fields" }));
         }
@@ -54,7 +52,7 @@ const server = http.createServer((req, res) => {
           currentDay: data.currentDay,
           modpackName: data.modpackName,
           version: data.version,
-          lastPing: Date.now(),
+          lastActive: Date.now(), // Track timestamp instead of countdown
         };
 
         activePlayers.set(data.playerName, playerData);
@@ -70,25 +68,11 @@ const server = http.createServer((req, res) => {
       }
     });
   } else if (req.method === "GET" && reqUrl.pathname === "/players") {
-    const now = Date.now();
-    const players = Array.from(activePlayers.values())
-      .filter((p) => now - p.lastPing <= COOLDOWN_MS)
-      .map((p) => ({
-        playerName: p.playerName,
-        currentDay: p.currentDay,
-        modpackName: p.modpackName,
-        lastSeen: new Date(p.lastPing).toLocaleString("en-US", {
-          year: "numeric",
-          month: "short",
-          day: "numeric",
-          hour: "2-digit",
-          minute: "2-digit",
-          second: "2-digit",
-          timeZoneName: "short",
-        }),
-        // Alternative simple format:
-        // lastSeen: new Date(p.lastPing).toISOString().replace('T', ' ').slice(0, 19)
-      }));
+    const players = Array.from(activePlayers.values()).map((p) => ({
+      playerName: p.playerName,
+      currentDay: p.currentDay,
+      modpackName: p.modpackName,
+    }));
 
     res.writeHead(200);
     res.end(
