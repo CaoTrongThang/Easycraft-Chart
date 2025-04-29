@@ -8,6 +8,7 @@ const COOLDOWN_MS = 30000; // 30 seconds cooldown
 
 interface PlayerData {
   playerName: string;
+  currentDay: number;
   modpackName: string;
   version: string;
   lastPing: number;
@@ -50,6 +51,7 @@ const server = http.createServer((req, res) => {
 
         const playerData: PlayerData = {
           playerName: data.playerName,
+          currentDay: data.currentDay,
           modpackName: data.modpackName,
           version: data.version,
           lastPing: Date.now(),
@@ -73,6 +75,7 @@ const server = http.createServer((req, res) => {
       .filter((p) => now - p.lastPing <= COOLDOWN_MS)
       .map((p) => ({
         playerName: p.playerName,
+        currentDay: p.currentDay,
         modpackName: p.modpackName,
         lastSeen: new Date(p.lastPing).toLocaleString("en-US", {
           year: "numeric",
