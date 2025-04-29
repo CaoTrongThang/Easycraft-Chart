@@ -9,6 +9,7 @@ const COOLDOWN_MS = 30000; // 30 seconds cooldown
 interface PlayerData {
   playerName: string;
   modpackName: string;
+  version: string;
   lastPing: number;
 }
 
@@ -50,6 +51,7 @@ const server = http.createServer((req, res) => {
         const playerData: PlayerData = {
           playerName: data.playerName,
           modpackName: data.modpackName,
+          version: data.version,
           lastPing: Date.now(),
         };
 
@@ -72,7 +74,17 @@ const server = http.createServer((req, res) => {
       .map((p) => ({
         playerName: p.playerName,
         modpackName: p.modpackName,
-        lastSeen: p.lastPing,
+        lastSeen: new Date(p.lastPing).toLocaleString("en-US", {
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+          timeZoneName: "short",
+        }),
+        // Alternative simple format:
+        // lastSeen: new Date(p.lastPing).toISOString().replace('T', ' ').slice(0, 19)
       }));
 
     res.writeHead(200);
