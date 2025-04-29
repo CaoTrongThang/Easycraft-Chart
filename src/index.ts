@@ -1,7 +1,9 @@
 import * as http from "http";
 import * as url from "url";
+import dotenv from "dotenv";
 
-const PORT = 25565;
+dotenv.config();
+const PORT = process.env.PORT || 25565;
 const COOLDOWN_MS = 30000; // 30 seconds cooldown
 
 interface PlayerData {
@@ -63,6 +65,23 @@ const server = http.createServer((req, res) => {
         res.end(JSON.stringify({ error: "Invalid JSON" }));
       }
     });
+  } else if (req.method === "GET" && reqUrl.pathname === "/players") {
+    const now = Date.now();
+    const players = Array.from(activePlayers.values())
+      .filter((p) => now - p.lastPing <= COOLDOWN_MS)
+      .map((p) => ({
+        playerName: p.playerName,
+        modpackName: p.modpackName,
+        lastSeen: p.lastPing,
+      }));
+
+    res.writeHead(200);
+    res.end(
+      JSON.stringify({
+        count: players.length,
+        players,
+      })
+    );
   } else {
     res.writeHead(404);
     res.end(JSON.stringify({ error: "Not Found", status: 404 }));
@@ -75,22 +94,3 @@ server.listen(PORT, () => {
   POST /ping - Send player heartbeat
   GET /players - Get active players list`);
 });
-
-// else if (req.method === "GET" && reqUrl.pathname === "/players") {
-//     const now = Date.now();
-//     const players = Array.from(activePlayers.values())
-//       .filter((p) => now - p.lastPing <= COOLDOWN_MS)
-//       .map((p) => ({
-//         playerName: p.playerName,
-//         modpackName: p.modpackName,
-//         lastSeen: p.lastPing,
-//       }));
-
-//     res.writeHead(200);
-//     res.end(
-//       JSON.stringify({
-//         count: players.length,
-//         players,
-//       })
-//     );
-//   }
